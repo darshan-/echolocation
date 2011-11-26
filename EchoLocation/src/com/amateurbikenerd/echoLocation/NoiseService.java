@@ -21,10 +21,11 @@ import com.amateurbikenerd.echoLocation.math.MITData;
 
 public class NoiseService extends Service {
         private java.util.Queue<short[]> queue = new java.util.concurrent.ConcurrentLinkedQueue<short[]>();
-        private static final int MAX_QUEUE = 3;
+        private static final int MAX_QUEUE = 4;
         private Thread generator;
         private Thread consumer;
         private short[] buffer;
+        private short[] csbuffer;
 	private int nativeSampleRate;
 	private int bufSize;
 	private int channelSize;
@@ -56,7 +57,6 @@ public class NoiseService extends Service {
 			bufSize++;
                 System.out.println("...................... bufSize = " + bufSize);
 		channelSize = bufSize / 2;
-		//bufSize = nativeSampleRate / 6;
 
 		track = new AudioTrack(
 				AudioManager.STREAM_MUSIC,
@@ -71,13 +71,18 @@ public class NoiseService extends Service {
                 for (int i=0; i<buffer.length; ++i)
                     buffer[i] = (short)(25000 * java.lang.Math.sin(i*2*java.lang.Math.PI/100));
 
+                //short[][] kernels = MITData.get(azimuth, 0);
+                //short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
+                //short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
+                //csbuffer = Convolutions.zipper(leftBuffer, rightBuffer);
+
                 generator = new Thread(new Runnable() {
                     public void run() {
-                        while (! java.lang.Thread.interrupted()) {
+                        while (! Thread.interrupted()) {
                             if (queue.size() >= MAX_QUEUE) {
                                 try{
-                                    System.out.println(".............. Generator: Queue is full, waiting 50ms");
-                                    Thread.sleep(50);
+                                    System.out.println(".............. Generator: Queue is full, waiting 100ms");
+                                    Thread.sleep(100);
                                     continue;
                                 } catch (Exception e) {}
                             }
@@ -85,6 +90,7 @@ public class NoiseService extends Service {
                             short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
                             short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
                             queue.add(Convolutions.zipper(leftBuffer, rightBuffer));
+                            //queue.add(csbuffer);
                         }
                     }
                 });
@@ -92,15 +98,15 @@ public class NoiseService extends Service {
 
                 consumer = new Thread(new Runnable() {
                     public void run() {
-                        while (! java.lang.Thread.interrupted()) {
+                        while (! Thread.interrupted()) {
                             if (queue.size() == 0) {
                                 try{
-                                    System.out.println(".............. Consumer: Queue is empty, waiting 50ms");
-                                    Thread.sleep(50);
+                                    System.out.println(".............. Consumer: Queue is empty, waiting 1000ms");
+                                    Thread.sleep(1000);
                                     continue;
                                 } catch (Exception e) {}
                             }
-                            if (track != null) track.write(queue.remove(), 0, buffer.length*2);
+                            if (track != null) track.write(queue.remove(), 0, buffer.length);
                         }
                     }
                 });
@@ -112,10 +118,10 @@ public class NoiseService extends Service {
 
 	@Override
 	public void onDestroy(){
-            track.stop();
-            track = null;
             generator.interrupt();
             consumer.interrupt();
+            track.stop();
+            track = null;
             sensorManager.unregisterListener(compassListener);
 	}
 
