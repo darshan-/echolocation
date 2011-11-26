@@ -21,14 +21,14 @@ import com.amateurbikenerd.echoLocation.math.MITData;
 
 public class NoiseService extends Service {
     private java.util.Queue<short[]> queue = new java.util.concurrent.ConcurrentLinkedQueue<short[]>();
-    private static final int MAX_QUEUE = 30;
     private Thread generator;
     private Thread consumer;
-    private short[] buffer;
-    private short[] csbuffer;
-    private int nativeSampleRate;
-    private int bufSize;
-    private int channelSize;
+    private int maxWriteAhead = 44100; /* 1 second */
+    private short[] toneBuffer;
+    private short[] convBuffer;
+    private int toneOffset = 0;
+    private int convOffset = 0;
+    private int lastOffset = 0;
     private AudioTrack track;
     private static int elevation = 0;
     private SensorManager sensorManager;
@@ -59,25 +59,22 @@ public class NoiseService extends Service {
                                AudioTrack.MODE_STREAM
                                );
 
-        // buffer = new short[44100/10];
-        // for (int i=0; i<buffer.length; ++i)
-        //    buffer[i] = (short)(25000 * java.lang.Math.sin(i*2*java.lang.Math.PI/100));
-
-        buffer = new short[200*441/3]; /* 1/3 of a second stereo; multiple of 200 for below */
-        for (int i=0; i<buffer.length; ++i) {
+        toneBuffer = new short[200*441 *10];
+        convBuffer = new short[200*441 *10];
+        for (int i=0; i<toneBuffer.length; ++i) {
             if (i < 200)
                 if (i % 2 == 0)
-                    buffer[i] = (short)(25000 * java.lang.Math.sin(i*java.lang.Math.PI/100));
+                    toneBuffer[i] = (short)(25000 * java.lang.Math.sin(i*java.lang.Math.PI/100));
                 else
-                    buffer[i] = buffer[i-1];
+                    toneBuffer[i] = toneBuffer[i-1];
             else
-                buffer[i] = buffer[i%200];
+                toneBuffer[i] = toneBuffer[i%200];
         }
 
         generator = new Thread(new Runnable() {
             public void run() {
                 while (! Thread.interrupted()) {
-                    if (queue.size() >= MAX_QUEUE) {
+                    if (convOffset - lastOffset > maxWriteAhead) {
                         try{
                             System.out.println(".............. Generator: Queue is full, waiting 50ms");
                             Thread.sleep(50);
@@ -85,8 +82,17 @@ public class NoiseService extends Service {
                         } catch (Exception e) {}
                     }
                     short[][] kernels = MITData.get(azimuth, 0);
-                    queue.add(Convolutions.stereoConvolve(buffer, kernels));
-                    //queue.add(buffer);
+                    synchronized(this) {
+                        if (convOffset + 44100 >= convBuffer.length) {
+                            toneOffset = 0;
+                            convOffset = 0;
+                            lastOffset = 0;
+                        }
+
+                        int inc = Convolutions.stereoConvolveInto(toneBuffer, toneOffset, convBuffer, convOffset, kernels);
+                        toneOffset += inc;
+                        convOffset += inc;
+                    }
                 }
             }
         });
@@ -95,19 +101,23 @@ public class NoiseService extends Service {
         consumer = new Thread(new Runnable() {
             public void run() {
                 while (! Thread.interrupted()) {
-                    if (queue.size() == 0) {
+                    if (convOffset == lastOffset) {
                         try{
-                            System.out.println(".............. Consumer: Queue is empty, waiting 100ms");
-                            Thread.sleep(100);
+                            System.out.println(".............. Consumer: Queue is empty, waiting 50ms");
+                            Thread.sleep(50);
                             continue;
                         } catch (Exception e) {}
                     }
-                    short[] buf = queue.remove();
-                    if (track != null) track.write(buf, 0, buf.length);
+                    synchronized (this) {
+                        if (convOffset == lastOffset) {continue;}
+                        if (track != null) track.write(convBuffer, lastOffset, convOffset-lastOffset);
+                        lastOffset = convOffset;
+                    }
                 }
             }
         });
-        consumer .start();
+        while (convOffset < 44100/2) ; /* Wait for 500ms buffer */
+        consumer.start();
 
         track.play();
         super.onCreate();
