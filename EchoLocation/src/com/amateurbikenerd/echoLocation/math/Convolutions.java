@@ -14,13 +14,14 @@ public class Convolutions {
     }
 
     public static short[] stereoConvolve(short[] samples, short[][] kernels) {
-        int kernelSize = 512;
-        short[] result = new short[samples.length/2];
-        for (int n = kernelSize; n < kernelSize+samples.length/2; n++) {
+        //return samples;
+        int kernelsSize = 1024;
+        short[] result = new short[samples.length-kernelsSize];
+        for (int n = 0; n < samples.length-kernelsSize; n++) {
             long sum = 0;
-            for (int i=0; i<kernelSize; i+=2)
-                sum += samples[n-kernelSize+i]*kernels[i%2][i];
-            result[n-kernelSize] = (short) (sum / 305176);
+            for (int i=0; i < kernelsSize; i+=2)
+                sum += samples[n + i]*kernels[i%2][i/2];
+            result[n] = (short) (sum / 100000);
         }
         return result;
     }
