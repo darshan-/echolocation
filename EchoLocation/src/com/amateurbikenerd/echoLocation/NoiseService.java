@@ -21,7 +21,7 @@ import com.amateurbikenerd.echoLocation.math.MITData;
 
 public class NoiseService extends Service {
         private java.util.Queue<short[]> queue = new java.util.concurrent.ConcurrentLinkedQueue<short[]>();
-        private static final int MAX_QUEUE = 4;
+        private static final int MAX_QUEUE = 30;
         private Thread generator;
         private Thread consumer;
         private short[] buffer;
@@ -81,8 +81,8 @@ public class NoiseService extends Service {
                         while (! Thread.interrupted()) {
                             if (queue.size() >= MAX_QUEUE) {
                                 try{
-                                    System.out.println(".............. Generator: Queue is full, waiting 100ms");
-                                    Thread.sleep(100);
+                                    System.out.println(".............. Generator: Queue is full, waiting 50ms");
+                                    Thread.sleep(50);
                                     continue;
                                 } catch (Exception e) {}
                             }
@@ -101,8 +101,8 @@ public class NoiseService extends Service {
                         while (! Thread.interrupted()) {
                             if (queue.size() == 0) {
                                 try{
-                                    System.out.println(".............. Consumer: Queue is empty, waiting 1000ms");
-                                    Thread.sleep(1000);
+                                    System.out.println(".............. Consumer: Queue is empty, waiting 2000ms");
+                                    Thread.sleep(2000);
                                     continue;
                                 } catch (Exception e) {}
                             }

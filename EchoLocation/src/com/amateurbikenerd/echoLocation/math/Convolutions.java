@@ -5,10 +5,10 @@ public class Convolutions {
         int kernelSize = 512;
         short[] result = new short[samples.length/2];
         for (int n = kernelSize; n < kernelSize+samples.length/2; n++) {
-            double sum = 0;
+            long sum = 0;
             for (int i=0; i<kernelSize; ++i)
                 sum += samples[n-kernelSize+i]*kernel[i];
-            result[n-kernelSize] = (short) (3.2768e-6 * sum);
+            result[n-kernelSize] = (short) (sum / 305176);
         }
         return result;
     }
