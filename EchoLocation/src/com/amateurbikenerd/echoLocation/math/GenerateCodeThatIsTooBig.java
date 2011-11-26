@@ -75,46 +75,28 @@ public class GenerateCodeThatIsTooBig {
 			String funcName = "f" + compositeKey;
 			System.out.println("    public static short[][] " + funcName + "(){");
 			System.out.print("        return new short[][]{{");
-			for(int i = 0; i < right.length; i++){
-				System.out.print(right[i]);
-				if(i != right.length - 1)
-					System.out.print(", ");
-			}
-			System.out.print("},{");
 			for(int i = 0; i < left.length; i++){
 				System.out.print(left[i]);
 				if(i != left.length - 1)
+					System.out.print(", ");
+			}
+			System.out.print("},{");
+			for(int i = 0; i < right.length; i++){
+				System.out.print(right[i]);
+				if(i != right.length - 1)
 					System.out.print(", ");
 			}
 			System.out.println("}};");
 			System.out.println("    }");
 		}
 		System.out.println("    public static short[][] get(int azimuth, int elevation){");
-		System.out.println("        if(! elevations.contains(elevation)){");
-		System.out.println("            int idx = (Collections.binarySearch(elevations, elevation) + 1) * -1;");
-		System.out.println("            if(idx == elevations.size())");
-		System.out.println("                idx--;");
-		System.out.println("        	elevation = elevations.get(idx);");
-		System.out.println("        }");
-		System.out.println("        ArrayList<Integer> azimuthListForElevation = azimuths.get(elevation);");
-		System.out.println("        if (! azimuthListForElevation.contains(azimuth)){");
-		System.out.println("            int idx = (Collections.binarySearch(azimuthListForElevation, azimuth) + 1) * -1;");
-		System.out.println("            if(idx == azimuthListForElevation.size())");
-		System.out.println("                idx--;");
-		System.out.println("            azimuth = azimuthListForElevation.get(idx);");
-		System.out.println("        };");
-		System.out.println("        String mName = \"f\" + azimuth + \"_\" + elevation;");
+		System.out.println("        String mName = \"f\" + (azimuth/5*5) + \"_0\";");
 		System.out.println("        try {");
 		System.out.println("            java.lang.reflect.Method m = MITData.class.getMethod(mName, new Class[] {});");
 		System.out.println("            return (short[][]) m.invoke(MITData.class, new Object[] {});");
 		System.out.println("        } catch (Exception e) {return null;}");
 		System.out.println("    }");
 
-		System.out.println("    public static void main(String[] args){");
-		System.out.println("        short a = MITData.f220_0()[0][0] ;");
-		System.out.println("        System.out.println(\"Hello World!\");");
-		System.out.println("        System.out.println(\"MITData.f220_0()[0][0] = \" + a);");
-		System.out.println("    } // close main");
 		System.out.println("} //close class");
 	}
 	public GenerateCodeThatIsTooBig(String directoryName) throws IllegalArgumentException, IllegalAccessException{
