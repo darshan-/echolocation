@@ -50,20 +50,13 @@ public class NoiseService extends Service {
 		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 		sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
                 sensorManager.registerListener(compassListener, sensor, SensorManager.SENSOR_DELAY_UI);
-		nativeSampleRate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
-		bufSize = AudioTrack.getMinBufferSize(nativeSampleRate,
-				AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-		if(bufSize % 2 != 0)
-			bufSize++;
-                System.out.println("...................... bufSize = " + bufSize);
-		channelSize = bufSize / 2;
 
 		track = new AudioTrack(
 				AudioManager.STREAM_MUSIC,
-				nativeSampleRate,
+				44100,
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO,
 				AudioFormat.ENCODING_PCM_16BIT,
-				2 * bufSize,
+				44100,
 				AudioTrack.MODE_STREAM
 		);
 
@@ -71,10 +64,22 @@ public class NoiseService extends Service {
                 for (int i=0; i<buffer.length; ++i)
                     buffer[i] = (short)(25000 * java.lang.Math.sin(i*2*java.lang.Math.PI/100));
 
+                // buffer = new short[44100];
+                //for (int i=0; i<buffer.length; ++i) {
+                //    //if (i < 200)
+                //        if (i % 2 == 0)
+                //            buffer[i] = (short)(25000 * java.lang.Math.sin(i*java.lang.Math.PI/100));
+                //        else
+                //            buffer[i] = buffer[i-1];
+                //    //else
+                //        //buffer[i] = buffer[i%200];
+                //}
+
                 //short[][] kernels = MITData.get(azimuth, 0);
                 //short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
                 //short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
                 //csbuffer = Convolutions.zipper(leftBuffer, rightBuffer);
+                csbuffer = Convolutions.zipper(buffer.clone(), buffer.clone());
 
                 generator = new Thread(new Runnable() {
                     public void run() {
@@ -86,11 +91,12 @@ public class NoiseService extends Service {
                                     continue;
                                 } catch (Exception e) {}
                             }
-                            short[][] kernels = MITData.get(azimuth, 0);
-                            short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
-                            short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
-                            queue.add(Convolutions.zipper(leftBuffer, rightBuffer));
-                            //queue.add(csbuffer);
+                            //short[][] kernels = MITData.get(azimuth, 0);
+                            //short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
+                            //short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
+                            //queue.add(Convolutions.zipper(leftBuffer, rightBuffer));
+                            queue.add(csbuffer);
+                            //queue.add(buffer);
                         }
                     }
                 });
@@ -110,7 +116,8 @@ public class NoiseService extends Service {
                         }
                     }
                 });
-                consumer .start();
+                try{Thread.sleep(1000);}catch(Exception e){};
+                consumer.start();
 
                 track.play();
 		super.onCreate();
