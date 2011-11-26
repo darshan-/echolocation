@@ -24,6 +24,7 @@ public class NoiseService extends Service {
 	private Timer timer;
 	//private Queue<short[]> q;
 	private short[][] dataBuffers;
+        private short[] buffer;
 	// useless comment
 	private int nativeSampleRate;
 	private int bufSize;
@@ -37,17 +38,16 @@ public class NoiseService extends Service {
 	private Sensor sensor;
 	int azimuth;
 	private final SensorEventListener compassListener = new SensorEventListener() {
-        public void onSensorChanged(SensorEvent event) {	
-        	azimuth = 360 - (int) event.values[0];
-        			
-        }
+            public void onSensorChanged(SensorEvent event) {	
+                azimuth = (int) event.values[0];
+            }
 
-		@Override
-		public void onAccuracyChanged(Sensor sensor, int accuracy) {
-			// TODO Auto-generated method stub
-			
-		}
-    };
+	    @Override
+	    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                // TODO Auto-generated method stub
+            }
+        };
+
 	@Override public void onCreate(){
 		azimuth = 0;
 		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
@@ -87,43 +87,55 @@ public class NoiseService extends Service {
 				2 * bufSize,
 				AudioTrack.MODE_STREAM
 		);
+
+                /*
+                byte[] data = new byte[0];
+                try {
+                    java.io.File file = new java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC), "sparcle.wav");
+                    java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                    data = new byte[fis.available()];
+                    fis.read(data, 0, data.length);
+                } catch (java.io.FileNotFoundException e) {
+                    System.out.println(".....................FileNotFoundException");
+                } catch (java.io.IOException e) {
+                    System.out.println(".....................IOFoundException");
+                }
+                java.nio.ShortBuffer sb = java.nio.ByteBuffer.wrap(data).order(java.nio.ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+                short[] inBuffer = new short[sb.limit()];
+                sb.get(inBuffer);
+                buffer = new short[inBuffer.length*8]; // *4 for 11025-> 44100; *2 for mono -> stereo
+
+                for (int i=0; i<inBuffer.length; ++i)
+                    for (int j=0; j<8; ++j)
+                        buffer[i*8+j] = inBuffer[i];
+                */
+
+                buffer = new short[44100];
+                for (int i=0; i<buffer.length; ++i)
+                    buffer[i] = (short)(25000 * java.lang.Math.sin(i*2*java.lang.Math.PI/100));
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        while (true) {
+                            short[][] kernels = MITData.get(azimuth, 0);
+                            short[] rightBuffer = Convolutions.convolveAndScale(buffer, kernels[0]);
+                            short[] leftBuffer = Convolutions.convolveAndScale(buffer, kernels[1]);
+                            if (track != null) track.write(Convolutions.zipper(leftBuffer, rightBuffer), 0, buffer.length*2);
+                        }
+                    }
+                }).start();
+
+                track.play();
 		super.onCreate();
-		startService();
 	}
-	private void startService(){
-	
-		// must divide by 2 because we're in stereo mode and every other data is taken
-		// as right or left channel and played simultaneously
-		INTERVAL_MILLISECONDS = (int)((double)(bufSize) / (double)(nativeSampleRate * 2) * 1000);
 
-
-		timer.scheduleAtFixedRate( new TimerTask() {
-
-			public void run() {
-				synchronized(this){
-					//System.out.println("playing. Sample rate is + " + nativeSampleRate + ", buffer is " + data.length + " shorts long, interval is " + INTERVAL_MILLISECONDS);
-					//Ok, so this is to go around every four seconds
-					//int azimuth = (int)((double)((System.currentTimeMillis() % 4000) * 360) / 4000d);
-					short[] leftBuffer = dataBuffers[random.nextInt(numBuffers)];
-					short[] rightBuffer = dataBuffers[random.nextInt(numBuffers)];
-					short[][] kernels = MITData.get(azimuth, 0);
-					if(kernels == null)
-						System.out.println("kernels was null at (az, ele) = (" + azimuth + ", " + elevation + ")");
-					rightBuffer = Convolutions.convolveAndScale(rightBuffer, kernels[0]);
-					leftBuffer = Convolutions.convolveAndScale(leftBuffer, kernels[1]);
-					if (track != null) track.write(Convolutions.zipper(leftBuffer, rightBuffer), 0, bufSize);
-					if (track != null) track.play();
-				}
-			}
-
-		}, 0, INTERVAL_MILLISECONDS);
-	}
 	@Override
 	public void onDestroy(){
 		timer.cancel();
 		track.stop();
 		track = null;
 	}
+
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub
