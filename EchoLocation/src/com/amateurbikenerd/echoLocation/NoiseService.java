@@ -82,8 +82,8 @@ public class NoiseService extends Service {
                                 } catch (Exception e) {}
                             }
                             short[][] kernels = MITData.get(azimuth, 0);
-                            short[] rightBuffer = Convolutions.convolveAndScale(buffer, kernels[0]);
-                            short[] leftBuffer = Convolutions.convolveAndScale(buffer, kernels[1]);
+                            short[] rightBuffer = Convolutions.convolve(buffer, kernels[0]);
+                            short[] leftBuffer = Convolutions.convolve(buffer, kernels[1]);
                             queue.add(Convolutions.zipper(leftBuffer, rightBuffer));
                         }
                     }
