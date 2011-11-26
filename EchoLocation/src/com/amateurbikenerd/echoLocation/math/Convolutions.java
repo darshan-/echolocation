@@ -10,14 +10,9 @@ public class Convolutions {
 	public static long[] convolve(short[] samples, short[] kernel) {
 		int len = kernel.length / 2;
 		int start = len / 2;
-		//int start = len / 4;
 		long[] rawConvolvedData = new long[samples.length + len];
 		long lastVal = 0;
 		for (int n = 0; n < rawConvolvedData.length; n++) {
-			if(n % 2 == 1){
-				rawConvolvedData[n] = lastVal;
-				continue;
-			}
 			double sum = 0;
 			for (int i = start; i<len; i++) {
 				if (i<samples.length + (len-1) - n && i >= len-n-1) {

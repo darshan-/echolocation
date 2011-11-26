@@ -20,8 +20,6 @@ import com.amateurbikenerd.echoLocation.math.Convolutions;
 import com.amateurbikenerd.echoLocation.math.MITData;
 
 public class NoiseService extends Service {
-
-	private Timer timer;
         private java.util.Queue<short[]> queue = new java.util.concurrent.ConcurrentLinkedQueue<short[]>();
         private static final int MAX_QUEUE = 3;
         private Thread generator;
@@ -37,7 +35,7 @@ public class NoiseService extends Service {
 	int azimuth;
 	private final SensorEventListener compassListener = new SensorEventListener() {
             public void onSensorChanged(SensorEvent event) {	
-                azimuth = (int) event.values[0];
+                azimuth = 360 - (int) event.values[0];
             }
 
 	    @Override
@@ -50,9 +48,7 @@ public class NoiseService extends Service {
 		azimuth = 0;
 		sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 		sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
-		sensorManager.registerListener(compassListener, sensor,
-                SensorManager.SENSOR_DELAY_UI);
-		timer = new Timer();
+                sensorManager.registerListener(compassListener, sensor, SensorManager.SENSOR_DELAY_UI);
 		nativeSampleRate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
 		bufSize = AudioTrack.getMinBufferSize(nativeSampleRate,
 				AudioFormat.CHANNEL_CONFIGURATION_STEREO, AudioFormat.ENCODING_PCM_16BIT);
@@ -71,7 +67,7 @@ public class NoiseService extends Service {
 				AudioTrack.MODE_STREAM
 		);
 
-                buffer = new short[44100];
+                buffer = new short[44100/10];
                 for (int i=0; i<buffer.length; ++i)
                     buffer[i] = (short)(25000 * java.lang.Math.sin(i*2*java.lang.Math.PI/100));
 
@@ -116,11 +112,11 @@ public class NoiseService extends Service {
 
 	@Override
 	public void onDestroy(){
+            track.stop();
+            track = null;
             generator.interrupt();
             consumer.interrupt();
-		timer.cancel();
-		track.stop();
-		track = null;
+            sensorManager.unregisterListener(compassListener);
 	}
 
 	@Override
