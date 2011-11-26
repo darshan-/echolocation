@@ -19,26 +19,25 @@ public class GenerateCodeThatIsTooBig {
 	private Hashtable<Integer, Hashtable<Integer, List<Short>>> leftImpulses;
 	private Hashtable<Integer, Hashtable<Integer, List<Short>>> rightImpulses;
 	public static void main(String[] args)throws Exception{
-                //GenerateCodeThatIsTooBig data = new GenerateCodeThatIsTooBig("/home/darshan/src/echolocation/mit_full");
-		GenerateCodeThatIsTooBig data = new GenerateCodeThatIsTooBig("/home/dmiles/mit_full");
+                GenerateCodeThatIsTooBig data = new GenerateCodeThatIsTooBig("/home/darshan/src/echolocation/mit_full");
+		//GenerateCodeThatIsTooBig data = new GenerateCodeThatIsTooBig("/home/dmiles/mit_full");
 		Hashtable<String, short[][]> ht = new Hashtable<String, short[][]>();
 		for(int azimuth : data.getAzimuths()){
-			for(int elevation : data.getElevations()){
-				String compositeKey = azimuth + "_" + elevation;
-				//System.out.println(compositeKey);
-				List<Short> listLeft = data.getImpulse('L', elevation, azimuth);
-				if(listLeft == null)
-					continue;
-				short[] left = new short[listLeft.size()];
-				for(int i = 0; i < listLeft.size(); i++)
-					left[i] = listLeft.get(i).shortValue();
-				List<Short> listRight = data.getImpulse('R', elevation, azimuth);
-				short[] right = new short[listRight.size()];
-				for(int i = 0; i < listRight.size(); i++)
-					right[i] = listRight.get(i).shortValue();
-				short[][] toStore = new short[][]{right, left};
-				ht.put(compositeKey, toStore);
-			}
+                    int elevation=0;
+                    String compositeKey = azimuth + "_" + elevation;
+                    //System.out.println(compositeKey);
+                    List<Short> listLeft = data.getImpulse('L', elevation, azimuth);
+                    if(listLeft == null)
+                        continue;
+                    short[] left = new short[listLeft.size()];
+                    for(int i = 0; i < listLeft.size(); i++)
+                        left[i] = listLeft.get(i).shortValue();
+                    List<Short> listRight = data.getImpulse('R', elevation, azimuth);
+                    short[] right = new short[listRight.size()];
+                    for(int i = 0; i < listRight.size(); i++)
+                        right[i] = listRight.get(i).shortValue();
+                    short[][] toStore = new short[][]{right, left};
+                    ht.put(compositeKey, toStore);
 		}
 		System.out.println("package com.amateurbikenerd.echoLocation.math;\n");
 		System.out.println("import java.util.Collections;");
@@ -54,7 +53,8 @@ public class GenerateCodeThatIsTooBig {
 			System.out.print("add(" + elevation + ");");
 		System.out.println("}};");
 		System.out.print("        azimuths = new Hashtable<Integer, ArrayList<Integer>>(){{");
-		for(int elevation : data.getElevations()){
+		//for(int elevation : data.getElevations()){
+                int elevation = 0;
 			System.out.print("put(" + elevation + ",new ArrayList<Integer>(){{");
 			List<Integer> azimuths = data.getAzimuths();
 			Collections.sort(azimuths);
@@ -65,7 +65,7 @@ public class GenerateCodeThatIsTooBig {
 				}
 			}
 			System.out.print("}});");
-		}
+                //}
 		System.out.println("}};");
 		System.out.println("    }");
 
@@ -111,9 +111,9 @@ public class GenerateCodeThatIsTooBig {
 		System.out.println("    }");
 
 		System.out.println("    public static void main(String[] args){");
-		System.out.println("        short a = MITData.f220_10()[0][0] ;");
+		System.out.println("        short a = MITData.f220_0()[0][0] ;");
 		System.out.println("        System.out.println(\"Hello World!\");");
-		System.out.println("        System.out.println(\"MITData.f220_10()[0][0] = \" + a);");
+		System.out.println("        System.out.println(\"MITData.f220_0()[0][0] = \" + a);");
 		System.out.println("    } // close main");
 		System.out.println("} //close class");
 	}
