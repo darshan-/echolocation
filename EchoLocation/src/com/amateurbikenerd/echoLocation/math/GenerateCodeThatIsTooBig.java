@@ -70,8 +70,8 @@ public class GenerateCodeThatIsTooBig {
 		System.out.println("    }");
 
 		for(String compositeKey : ht.keySet()){
-			short[] left = ht.get(compositeKey)[1];
-			short[] right = ht.get(compositeKey)[0];
+			short[] left = ht.get(compositeKey)[0];
+			short[] right = ht.get(compositeKey)[1];
 			String funcName = "f" + compositeKey;
 			System.out.println("    public static short[][] " + funcName + "(){");
 			System.out.print("        return new short[][]{{");
@@ -89,7 +89,7 @@ public class GenerateCodeThatIsTooBig {
 			System.out.println("}};");
 			System.out.println("    }");
 		}
-		System.out.println("    public static short[][] get(int azimuth, int elevation){");
+		System.out.println("    public static short[][] get(int azimuth){");
 		System.out.println("        String mName = \"f\" + (azimuth/5*5) + \"_0\";");
 		System.out.println("        try {");
 		System.out.println("            java.lang.reflect.Method m = MITData.class.getMethod(mName, new Class[] {});");

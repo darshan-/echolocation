@@ -13,28 +13,30 @@ public class Convolutions {
         return result;
     }
 
-    public static short[] stereoConvolve(short[] samples, short[][] kernels) {
-        return samples;
-        // int kernelsSize = 1024;
-        // short[] result = new short[samples.length-kernelsSize];
-        // for (int n = 0; n < samples.length-kernelsSize; n++) {
-        //     long sum = 0;
-        //     for (int i=0; i < kernelsSize; i+=2)
-        //         sum += samples[n + i]*kernels[i%2][i/2];
-        //     result[n] = (short) (sum / 100000);
-        // }
-        // return result;
-    }
+    // public static short[] stereoConvolve(short[] samples, short[][] kernels) {
+    //     return samples;
+    //     int kernelsSize = 1024;
+    //     short[] result = new short[samples.length-kernelsSize];
+    //     for (int n = 0; n < samples.length-kernelsSize; n++) {
+    //         long sum = 0;
+    //         for (int i=0; i < kernelsSize; i+=2)
+    //             sum += samples[n + i]*kernels[i%2][i/2];
+    //         result[n] = (short) (sum / 100000);
+    //     }
+    //     return result;
+    // }
 
-    public static int stereoConvolveInto(short[] samples, int samplesOffset, short[] convBuffer, int convOffset, short[][] kernels) {
+    public static void stereoConvolveInto(short[] samples, short[] convBuffer, short[][] kernels) {
+        // for (int i = 0; i < samples.length; ++i)
+        //     convBuffer[i] = samples[i];
+        // ;
         int kernelsSize = 1024;
-        int nConvolve = 4410; /* Do 100ms at a time */
-        for (int n = 0; n < nConvolve; n++) {
+        for (int n = 0; n < samples.length-1200; n++) {
             long sum = 0;
             for (int i=256; i < 768; i+=2)
-                sum += samples[samplesOffset + n + i] * kernels[i%2][i/2];
-            convBuffer[convOffset + n] = (short) (sum / 50000);
+                //for (int i=0; i < kernelsSize; i+=2)
+                sum += samples[n + i] * kernels[i%2][i/2];
+            convBuffer[n] = (short) (sum / 50000);
         }
-        return nConvolve; /* Number of samples not convolved from end of `samples' */
     }
 }
